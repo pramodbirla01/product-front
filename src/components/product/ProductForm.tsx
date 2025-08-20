@@ -1,41 +1,69 @@
-import React from "react";
-import ProductImageForm from "./ProductImageForm";
-import ProductCategoryForm from "./ProductCategoryForm";
-import ProductPricingForm from "./ProductPricingForm";
-import ProductInventoryForm from "./ProductInventoryForm";
-import ProductDetailsForm from "./ProductDetailsForm";
-import ProductMetaForm from "./ProductMetaForm";
+
+import React, { useState } from "react";
 import { Button } from "../ui/button";
+import ProductDataForm from "./ProductDataForm";
+import CategoryForm from "./CategoryForm";
+import VariantForm from "./VariantForm";
+import { addProduct } from "../../api/product";
+import { addVariant } from "../../api/variant";
 
 export default function ProductForm({ onClose }: { onClose: () => void }) {
+  const [product, setProduct] = useState({
+    name: "",
+    description: "",
+    brand: "",
+    imageUrl: "",
+    tags: "",
+    categoryId: ""
+  });
+  const [categoryId, setCategoryId] = useState("");
+  const [variants, setVariants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleProductChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProduct({ ...product, [e.target.name]: e.target.value });
+  };
+
+  const handleAddProduct = async () => {
+    setLoading(true);
+    try {
+  const tagsArr = product.tags.split(",").map((t: string) => t.trim()).filter(Boolean);
+      const prodRes = await addProduct({
+        ...product,
+        tags: tagsArr,
+        categoryId: categoryId
+      });
+      // Add all variants
+      for (const v of variants) {
+        await addVariant({ ...v, productId: prodRes.id });
+      }
+      onClose();
+    } catch (err) {
+      alert("Failed to add product or variants");
+    }
+    setLoading(false);
+  };
+
   return (
-    <div className="p-6 border border-gray-800 rounded-lg bg-[#18181b] max-w-4xl mx-auto mt-8 text-white">
+    <div className="p-6 border border-gray-800 rounded-lg bg-[#18181b] max-w-2xl mx-auto mt-8 text-white">
       <h2 className="text-lg font-bold mb-6">Add Product</h2>
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Block 1: Basic Info */}
-        <div className="border border-gray-700 rounded-lg p-4 bg-[#23232a] flex flex-col gap-2">
-          <ProductImageForm />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="border border-gray-700 rounded-lg p-4 bg-[#23232a] flex flex-col gap-4">
+          <CategoryForm selected={categoryId} onSelect={setCategoryId} />
         </div>
-        {/* Block 2: Category & Pricing */}
-        <div className="border border-gray-700 rounded-lg p-4 bg-[#23232a] flex flex-col gap-2">
-          <ProductCategoryForm />
-          <ProductPricingForm />
+        <div className="border border-gray-700 rounded-lg p-4 bg-[#23232a] flex flex-col gap-4">
+          <ProductDataForm data={product} onChange={handleProductChange} />
         </div>
-        {/* Block 3: Inventory & Details */}
-        <div className="border border-gray-700 rounded-lg p-4 bg-[#23232a] flex flex-col gap-2">
-          <ProductInventoryForm />
+        <div className="md:col-span-2 border border-gray-700 rounded-lg p-4 bg-[#23232a] flex flex-col gap-4">
+          <VariantForm variants={variants} setVariants={setVariants} />
         </div>
-        {/* Block 4: Meta */}
-        <div className="border border-gray-700 rounded-lg p-4 bg-[#23232a] flex flex-col gap-2">
-          <ProductDetailsForm />
-          <ProductMetaForm />
-        </div>
-        {/* Actions (spans both columns) */}
-        <div className="md:col-span-2 flex gap-2 justify-end mt-2">
-          <Button type="button" variant="outline" onClick={onClose} className="bg-transparent border-gray-600 text-white hover:bg-gray-800">Cancel</Button>
-          <Button type="submit" className="bg-white text-black hover:bg-gray-200">Save</Button>
-        </div>
-      </form>
+      </div>
+      <div className="flex gap-2 justify-end mt-4">
+        <Button type="button" variant="outline" onClick={onClose} className="bg-transparent border-gray-600 text-white hover:bg-gray-800">Cancel</Button>
+        <Button type="button" className="bg-white text-black hover:bg-gray-200" onClick={handleAddProduct} disabled={loading || !categoryId || !product.name || !variants.length}>
+          {loading ? "Saving..." : "Add Product"}
+        </Button>
+      </div>
     </div>
   );
 }

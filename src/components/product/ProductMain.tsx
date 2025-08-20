@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
 import ProductForm from "./ProductForm";
+import ProductList from "./ProductList";
 
 export default function ProductMain() {
   const [open, setOpen] = useState(false);
@@ -16,6 +17,9 @@ export default function ProductMain() {
         </Button>
       </div>
       {open && <ProductForm onClose={() => setOpen(false)} />}
+      <div className="px-6 pb-10">
+        <ProductList />
+      </div>
     </div>
   );
 }
